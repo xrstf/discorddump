@@ -1,0 +1,5 @@
+username: me@provider.com
+password: superpassword
+target: data
+#ignoredGuilds: [guild-id, guild-id, ...]
+#ignoredChannels: [channel-id, channel-id, ...]
