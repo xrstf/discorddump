@@ -29,3 +29,11 @@ func loadConfig(filename string) (*config, error) {
 
 	return &cfg, nil
 }
+
+func (c *config) isGuildIgnored(guildID string) bool {
+	return stringSliceContains(c.IgnoredGuilds, guildID)
+}
+
+func (c *config) isChannelIgnored(channelID string) bool {
+	return stringSliceContains(c.IgnoredChannels, channelID)
+}
