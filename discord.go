@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -11,7 +10,7 @@ import (
 )
 
 func dumpGuilds(cfg *config, session *discordgo.Session, cutoff time.Time) error {
-	log.Println("Starting dump process...")
+	logPrint("Starting dump process...\n")
 
 	f, err := os.Create(filepath.Join(cfg.Target, "guilds.json"))
 	if err != nil {
@@ -52,7 +51,7 @@ func dumpGuilds(cfg *config, session *discordgo.Session, cutoff time.Time) error
 }
 
 func dumpGuild(cfg *config, session *discordgo.Session, cutoff time.Time, guild *discordgo.UserGuild) error {
-	log.Printf("Dumping %s (%s)...", guild.ID, guild.Name)
+	logPrint("Dumping %s (%s)...\n", guild.ID, guild.Name)
 
 	err := os.MkdirAll(filepath.Join(cfg.Target, guild.ID), 0755)
 	if err != nil {
@@ -87,14 +86,10 @@ func dumpGuild(cfg *config, session *discordgo.Session, cutoff time.Time, guild 
 }
 
 func dumpChannel(cfg *config, session *discordgo.Session, cutoff time.Time, guild *discordgo.UserGuild, channel *discordgo.Channel) error {
+	logPrint("  Dumping %s (%s)...\n", channel.ID, channel.Name)
+
 	logfile := filepath.Join(cfg.Target, guild.ID, fmt.Sprintf("%s.json", channel.ID))
 	beforeID := findOldestKnown(logfile)
-
-	if beforeID != "" {
-		log.Printf("  Dumping %s (%s) (resuming at %s)...", channel.ID, channel.Name, beforeID)
-	} else {
-		log.Printf("  Dumping %s (%s)...", channel.ID, channel.Name)
-	}
 
 	fp, err := os.OpenFile(logfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
@@ -105,22 +100,22 @@ func dumpChannel(cfg *config, session *discordgo.Session, cutoff time.Time, guil
 	chunk := 100
 
 	for {
-		beforeInfo := beforeID
-		if beforeInfo == "" {
-			beforeInfo = "(now)"
-		}
-
-		log.Printf("    Fetching %d starting at %s...", chunk, beforeInfo)
+		logPrint("    Fetching %d...", chunk)
 
 		messages, err := session.ChannelMessages(channel.ID, chunk, beforeID, "", "")
 		if err != nil {
 			// do not fail if we simply have no access to a channel
 			if restError, ok := err.(*discordgo.RESTError); ok && restError.Message != nil && restError.Message.Code == discordgo.ErrCodeMissingAccess {
-				log.Println("    Error: no access to this channel.")
+				logEndLine(" error: no access to this channel.")
 				return nil
 			}
 
 			return err
+		}
+
+		if len(messages) == 0 {
+			logEndLine(" no further messages.")
+			break
 		}
 
 		oldest := time.Time{}
@@ -130,6 +125,8 @@ func dumpChannel(cfg *config, session *discordgo.Session, cutoff time.Time, guil
 			beforeID = msg.ID
 			oldest, _ = msg.Timestamp.Parse()
 		}
+
+		logEndLine(" reached %s", oldest.Format(time.RFC822))
 
 		if oldest.Before(cutoff) {
 			break
