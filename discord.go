@@ -105,10 +105,21 @@ func dumpChannel(cfg *config, session *discordgo.Session, cutoff time.Time, guil
 	chunk := 100
 
 	for {
-		log.Printf("    Fetching %d starting at %s...", chunk, beforeID)
+		beforeInfo := beforeID
+		if beforeInfo == "" {
+			beforeInfo = "(now)"
+		}
+
+		log.Printf("    Fetching %d starting at %s...", chunk, beforeInfo)
 
 		messages, err := session.ChannelMessages(channel.ID, chunk, beforeID, "", "")
 		if err != nil {
+			// do not fail if we simply have no access to a channel
+			if restError, ok := err.(*discordgo.RESTError); ok && restError.Message != nil && restError.Message.Code == discordgo.ErrCodeMissingAccess {
+				log.Println("    Error: no access to this channel.")
+				return nil
+			}
+
 			return err
 		}
 
