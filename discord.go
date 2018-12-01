@@ -110,6 +110,7 @@ func dumpChannel(cfg *config, session *discordgo.Session, cutoff time.Time, guil
 				return nil
 			}
 
+			logEndLine("")
 			return err
 		}
 
