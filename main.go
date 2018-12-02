@@ -39,12 +39,12 @@ func main() {
 		logFatal("Failed to create data target directory: %v\n", err)
 	}
 
-	sesseion, err := discordgo.New(config.Username, config.Password)
+	session, err := discordgo.New(config.Username, config.Password)
 	if err != nil {
 		logFatal("Failed to open Discord session: %v\n", err)
 	}
 
-	err = dumpGuilds(config, sesseion, cutoff)
+	err = dumpGuilds(config, session, cutoff)
 	if err != nil {
 		logFatal("Failed to dump data: %v\n", err)
 	}
